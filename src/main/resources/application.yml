@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: DocumentVerification
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/document_verification_db
+    username: raidenz
+    password: qwer
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+    show-sql: true
+
+
