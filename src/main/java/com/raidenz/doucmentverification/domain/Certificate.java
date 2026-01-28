@@ -22,19 +22,15 @@ public class Certificate {
     @Column(length = 100, nullable = false)
     private String owner;
 
-    private LocalDateTime issueDate;
-
     @Column(length = 100, nullable = false)
     private String courseName;
 
     @Column(length = 100, nullable = false)
     private String offeredBy;
 
-    @Column(nullable = false)
+    private LocalDateTime issueDate;
     private String pdfPath;
-
-    @Column(nullable = false)
     private String hashValue;
-
     private Set<String> coveredTopics;
+    private String code;
 }
