@@ -8,5 +8,5 @@ import java.util.Optional;
 public interface CertificateRepository extends JpaRepository<Certificate, Long> {
 
     Optional<Certificate> findCertificateByHashValue(String hashValue);
-
+    Optional<Certificate> findCertificateByCode(String code);
 }

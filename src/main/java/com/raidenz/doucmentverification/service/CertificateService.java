@@ -8,5 +8,6 @@ import java.io.IOException;
 public interface CertificateService {
 
     CertificateResponse generateCertificate(CertificateCreateRequest request) throws IOException;
+    CertificateResponse findByCode(String code);
 
 }
