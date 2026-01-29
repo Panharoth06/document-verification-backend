@@ -1,13 +1,10 @@
 package com.raidenz.doucmentverification.util;
 
-import org.springframework.stereotype.Component;
-
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-@Component
 public class HashUtil {
-    public String calculatePdfHash(byte[] pdfBytes) {
+    public static String calculatePdfHash(byte[] pdfBytes) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hashBytes = digest.digest(pdfBytes);

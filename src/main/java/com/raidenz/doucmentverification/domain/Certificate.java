@@ -33,4 +33,5 @@ public class Certificate {
     private String hashValue;
     private Set<String> coveredTopics;
     private String code;
+
 }

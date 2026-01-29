@@ -1,8 +1,6 @@
 package com.raidenz.doucmentverification.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-//import jakarta.validation.constraints.NotEmpty;
-
 import java.util.Set;
 
 public record CertificateCreateRequest(

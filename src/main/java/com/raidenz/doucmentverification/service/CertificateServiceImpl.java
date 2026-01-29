@@ -1,32 +1,34 @@
 package com.raidenz.doucmentverification.service;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.LoadState;
 import com.raidenz.doucmentverification.domain.Certificate;
 import com.raidenz.doucmentverification.dto.CertificateCreateRequest;
 import com.raidenz.doucmentverification.dto.CertificateResponse;
-import com.raidenz.doucmentverification.dto.CertificateValidateResponse;
+import com.raidenz.doucmentverification.exception.customException.ResourceNotFoundException;
 import com.raidenz.doucmentverification.repository.CertificateRepository;
 import com.raidenz.doucmentverification.util.HashUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class CertificateServiceImpl implements CertificateService{
+public class CertificateServiceImpl implements CertificateService {
 
     private final CertificateRepository certificateRepository;
-    private final HashUtil hashUtil;
 
-    @Value("${FRONTEND_BASE_URL}")
-    private String FRONTEND_BASE_URL;
+    @Value("${frontend.base-url}")
+    private String frontendBaseUrl;
 
     @Override
     public CertificateResponse generateCertificate(CertificateCreateRequest request) throws IOException {
@@ -41,15 +43,16 @@ public class CertificateServiceImpl implements CertificateService{
 
         certificateRepository.save(cert);
 
-        byte[] pdfBytes = renderPdfFromUrl(cert.getId());
+        byte[] pdfBytes = renderPdfFromUrl(cert);
 
-        String pdfHash = hashUtil.calculatePdfHash(pdfBytes);
+        String pdfHash = HashUtil.calculatePdfHash(pdfBytes);
         cert.setHashValue(pdfHash);
 
         String pdfPath = savePdfToDisk(cert.getCode(), pdfBytes);
         cert.setPdfPath(pdfPath);
 
         certificateRepository.save(cert);
+
         return CertificateResponse.builder()
                 .courseName(cert.getCourseName())
                 .ownerName(cert.getOwner())
@@ -62,40 +65,67 @@ public class CertificateServiceImpl implements CertificateService{
     }
 
     @Override
-    public CertificateValidateResponse validateByHash(String hashValue) {
-        return certificateRepository.findCertificateByHashValue(hashValue)
-                .map(cert -> new CertificateValidateResponse(
-                        true,
-                        CertificateResponse.builder()
-                                .ownerName(cert.getOwner())
-                                .courseName(cert.getCourseName())
-                                .offeredBy(cert.getOfferedBy())
-                                .coveredTopics(cert.getCoveredTopics())
-                                .issueDate(cert.getIssueDate())
-                                .pdfPath(cert.getPdfPath())
-                                .code(cert.getCode())
-                                .build()
-                ))
-                .orElse(new CertificateValidateResponse(false, null));
+    public boolean verifyByUploadedFile(MultipartFile file) {
+
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("No file uploaded");
+        }
+
+        try {
+            byte[] uploadedBytes = file.getBytes();
+            String uploadedHash = HashUtil.calculatePdfHash(uploadedBytes);
+
+            Certificate cert = certificateRepository.findByHashValue(uploadedHash)
+                    .orElseThrow(() -> new ResourceNotFoundException("Certificate verification FAILED: This certificate is fake or has been modified"));
+
+            return cert != null;
+        } catch (IOException e) {
+            throw new RuntimeException("Verification process failed", e);
+        }
     }
 
-    private byte[] renderPdfFromUrl(Long certificateId) {
-        String url = FRONTEND_BASE_URL + "/certificate/print/" + certificateId;
+    @Override
+    public CertificateResponse findByCode(String code) {
+        Certificate cert = certificateRepository.findCertificateByCode(code)
+                .orElseThrow(() -> new ResourceNotFoundException("Certificate with code: " + code + " not found"));
 
-        try (Playwright playwright = Playwright.create()) {
-            Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
-            BrowserContext context = browser.newContext(new Browser.NewContextOptions().setViewportSize(1123, 794));
-            Page page = context.newPage();
+        return CertificateResponse.builder()
+                .courseName(cert.getCourseName())
+                .ownerName(cert.getOwner())
+                .offeredBy(cert.getOfferedBy())
+                .coveredTopics(cert.getCoveredTopics())
+                .issueDate(cert.getIssueDate())
+                .pdfPath(cert.getPdfPath())
+                .code(cert.getCode())
+                .build();
+    }
 
-            page.navigate(url);
-            page.waitForLoadState(LoadState.NETWORKIDLE);
+    private byte[] renderPdfFromUrl(Certificate cert) {
+        try {
+            String url = frontendBaseUrl + "/certificate/print/" + cert.getCode() +
+                    "?owner=" + URLEncoder.encode(cert.getOwner(), StandardCharsets.UTF_8) +
+                    "&course=" + URLEncoder.encode(cert.getCourseName(), StandardCharsets.UTF_8) +
+                    "&offeredBy=" + URLEncoder.encode(cert.getOfferedBy(), StandardCharsets.UTF_8) +
+                    "&topics=" + URLEncoder.encode(String.join(",", cert.getCoveredTopics()), StandardCharsets.UTF_8) +
+                    "&date=" + URLEncoder.encode(cert.getIssueDate().toString(), StandardCharsets.UTF_8);
 
-            return page.pdf(new Page.PdfOptions()
-                    .setPrintBackground(true)
-                    .setLandscape(true)
-                    .setWidth("1123px")
-                    .setHeight("794px")
-            );
+            try (Playwright playwright = Playwright.create()) {
+                Browser browser = playwright.chromium()
+                        .launch(new BrowserType.LaunchOptions().setHeadless(true));
+
+                BrowserContext context = browser.newContext(
+                        new Browser.NewContextOptions().setViewportSize(1123, 794));
+
+                Page page = context.newPage();
+                page.navigate(url);
+                page.waitForLoadState(LoadState.NETWORKIDLE);
+
+                return page.pdf(new Page.PdfOptions()
+                        .setPrintBackground(true)
+                        .setLandscape(true)
+                        .setWidth("1123px")
+                        .setHeight("794px"));
+            }
 
         } catch (Exception e) {
             throw new RuntimeException("PDF generation failed", e);
