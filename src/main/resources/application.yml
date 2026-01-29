@@ -13,7 +13,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update   # 👈 THIS LINE IS REQUIRED
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
