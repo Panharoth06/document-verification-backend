@@ -8,6 +8,7 @@ import com.microsoft.playwright.options.LoadState;
 import com.raidenz.doucmentverification.domain.Certificate;
 import com.raidenz.doucmentverification.dto.CertificateCreateRequest;
 import com.raidenz.doucmentverification.dto.CertificateResponse;
+import com.raidenz.doucmentverification.dto.CertificateValidateResponse;
 import com.raidenz.doucmentverification.repository.CertificateRepository;
 import com.raidenz.doucmentverification.util.HashUtil;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +26,7 @@ public class CertificateServiceImpl implements CertificateService{
     private final HashUtil hashUtil;
 
     @Value("${FRONTEND_BASE_URL}")
-    private static String FRONTEND_BASE_URL;
+    private String FRONTEND_BASE_URL;
 
     @Override
     public CertificateResponse generateCertificate(CertificateCreateRequest request) throws IOException {
@@ -58,6 +59,24 @@ public class CertificateServiceImpl implements CertificateService{
                 .pdfPath(cert.getPdfPath())
                 .code(cert.getCode())
                 .build();
+    }
+
+    @Override
+    public CertificateValidateResponse validateByHash(String hashValue) {
+        return certificateRepository.findCertificateByHashValue(hashValue)
+                .map(cert -> new CertificateValidateResponse(
+                        true,
+                        CertificateResponse.builder()
+                                .ownerName(cert.getOwner())
+                                .courseName(cert.getCourseName())
+                                .offeredBy(cert.getOfferedBy())
+                                .coveredTopics(cert.getCoveredTopics())
+                                .issueDate(cert.getIssueDate())
+                                .pdfPath(cert.getPdfPath())
+                                .code(cert.getCode())
+                                .build()
+                ))
+                .orElse(new CertificateValidateResponse(false, null));
     }
 
     private byte[] renderPdfFromUrl(Long certificateId) {

@@ -1,18 +1,24 @@
+server:
+  port: 8081
+
 spring:
   application:
     name: DocumentVerification
+
   datasource:
     driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://localhost:5432/document_verification_db
-    username: raidenz
-    password: qwer
+    username: postgres
+    password: 8990
+
   jpa:
+    hibernate:
+      ddl-auto: update   # 👈 THIS LINE IS REQUIRED
+    show-sql: true
     properties:
       hibernate:
         format_sql: true
         use_sql_comments: true
-    show-sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
-
-FRONTEND_BASE_URL: http://localhost3000
-
+FRONTEND_BASE_URL: http://localhost:3000

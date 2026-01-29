@@ -2,6 +2,8 @@ package com.raidenz.doucmentverification;
 
 import com.raidenz.doucmentverification.dto.CertificateCreateRequest;
 import com.raidenz.doucmentverification.dto.CertificateResponse;
+import com.raidenz.doucmentverification.dto.CertificateValidateRequest;
+import com.raidenz.doucmentverification.dto.CertificateValidateResponse;
 import com.raidenz.doucmentverification.service.CertificateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -33,6 +35,12 @@ public class CertificateController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + cert.code() + ".pdf")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdfBytes);
+    }
+    @PostMapping("/validate")
+    public ResponseEntity<?> validateCertificate(@RequestBody CertificateValidateRequest request) {
+        CertificateValidateResponse response =
+                certificateService.validateByHash(request.hashValue());
+        return ResponseEntity.ok(response);
     }
 
 }
