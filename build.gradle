@@ -39,6 +39,9 @@ dependencies {
 
 //    dependencies for PDF generation
     implementation 'com.microsoft.playwright:playwright:1.41.0'
+
+    // Swagger/OpenAPI dependencies
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.0'
 }
 
 tasks.named('test') {

@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+  backend:
+    build: .
+    container_name: certificate-backend
+    ports:
+      - "8080:8080"                  # API available on http://localhost:8080
+    environment:
+      - FRONTEND_BASE_URL=http://localhost:3000
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/document_verification_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update     # or validate / none — depending on your preference
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
+    volumes:
+      - ./certificates:/app/certificates
+    depends_on:
+      db:
+        condition: service_healthy           # waits until postgres is really ready
+    restart: unless-stopped
+
+  db:
+    image: postgres:16
+    container_name: certificate-db
+    environment:
+      POSTGRES_DB: document_verification_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  db-data:
