@@ -17,6 +17,7 @@ import com.raidenz.doucmentverification.util.HashUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -26,7 +27,6 @@ import java.util.UUID;
 public class CertificateServiceImpl implements CertificateService{
 
     private final CertificateRepository certificateRepository;
-    private final HashUtil hashUtil;
 
     @Value("${frontend.base-url}")
     private String frontEndUrl;
@@ -46,7 +46,7 @@ public class CertificateServiceImpl implements CertificateService{
 
         byte[] pdfBytes = renderPdfFromUrl(cert);
 
-        String pdfHash = hashUtil.calculatePdfHash(pdfBytes);
+        String pdfHash = HashUtil.calculatePdfHash(pdfBytes);
         cert.setHashValue(pdfHash);
 
         String pdfPath = savePdfToDisk(cert.getCode(), pdfBytes);
@@ -62,6 +62,26 @@ public class CertificateServiceImpl implements CertificateService{
                 .pdfPath(cert.getPdfPath())
                 .code(cert.getCode())
                 .build();
+    }
+
+    @Override
+    public boolean verifyByUploadedFile(MultipartFile file) {
+
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("No file uploaded");
+        }
+
+        try {
+            byte[] uploadedBytes = file.getBytes();
+            String uploadedHash = HashUtil.calculatePdfHash(uploadedBytes);
+
+            Certificate cert = certificateRepository.findByHashValue(uploadedHash)
+                    .orElseThrow(() -> new ResourceNotFoundException("Certificate verification FAILED: This certificate is fake or has been modified"));
+
+            return cert != null;
+        } catch (IOException e) {
+            throw new RuntimeException("Verification process failed", e);
+        }
     }
 
     @Override

@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -46,4 +47,10 @@ public class CertificateController {
     public CertificateResponse getCertificateByCode(@PathVariable String code) throws IOException {
         return certificateService.findByCode(code);
     }
+
+    @PostMapping("/verify/upload")
+    public boolean verifyByUpload(@RequestParam("file") MultipartFile file) {
+        return certificateService.verifyByUploadedFile(file);
+    }
+
 }
