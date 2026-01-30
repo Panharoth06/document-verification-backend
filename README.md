@@ -20,4 +20,4 @@ docker compose up -d --build
 docker compose logs backend -f
 
 # API should now be running at: http://localhost:8080
-# Swagger/OpenAPI (if enabled): http://localhost:8080/swagger-ui.html
+# Swagger/OpenAPI: http://localhost:8080/docs

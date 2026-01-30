@@ -1,7 +1,6 @@
 package com.raidenz.doucmentverification.service;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -11,6 +10,7 @@ import com.microsoft.playwright.options.LoadState;
 import com.raidenz.doucmentverification.domain.Certificate;
 import com.raidenz.doucmentverification.dto.CertificateCreateRequest;
 import com.raidenz.doucmentverification.dto.CertificateResponse;
+import com.raidenz.doucmentverification.dto.CertificateVerifyResponse;
 import com.raidenz.doucmentverification.exception.customException.ResourceNotFoundException;
 import com.raidenz.doucmentverification.repository.CertificateRepository;
 import com.raidenz.doucmentverification.util.HashUtil;
@@ -65,7 +65,7 @@ public class CertificateServiceImpl implements CertificateService{
     }
 
     @Override
-    public boolean verifyByUploadedFile(MultipartFile file) {
+    public CertificateVerifyResponse verifyByUploadedFile(MultipartFile file) {
 
         if (file.isEmpty()) {
             throw new IllegalArgumentException("No file uploaded");
@@ -75,10 +75,12 @@ public class CertificateServiceImpl implements CertificateService{
             byte[] uploadedBytes = file.getBytes();
             String uploadedHash = HashUtil.calculatePdfHash(uploadedBytes);
 
-            Certificate cert = certificateRepository.findByHashValue(uploadedHash)
+            Certificate cert = certificateRepository.findCertificateByHashValue(uploadedHash)
                     .orElseThrow(() -> new ResourceNotFoundException("Certificate verification FAILED: This certificate is fake or has been modified"));
 
-            return cert != null;
+            CertificateVerifyResponse response = CertificateVerifyResponse.builder().isValid(cert != null).build();
+
+            return response;
         } catch (IOException e) {
             throw new RuntimeException("Verification process failed", e);
         }
@@ -101,13 +103,13 @@ public class CertificateServiceImpl implements CertificateService{
                 .build();
     }
 
-    private byte[] renderPdfFromUrl(Certificate cert) throws UnsupportedEncodingException {
-        // example in CertificateServiceImpl
+    private byte[] renderPdfFromUrl(Certificate cert) {
+
         String url = frontEndUrl + "/certificate/print/" + cert.getCode() +
                 "?owner=" + URLEncoder.encode(cert.getOwner(), StandardCharsets.UTF_8) +
                 "&course=" + URLEncoder.encode(cert.getCourseName(), StandardCharsets.UTF_8) +
                 "&offeredBy=" + URLEncoder.encode(cert.getOfferedBy(), StandardCharsets.UTF_8) +
-                "&topics=" + URLEncoder.encode(String.join(",", cert.getCoveredTopics()), "UTF-8") +
+                "&topics=" + URLEncoder.encode(String.join(",", cert.getCoveredTopics()), StandardCharsets.UTF_8) +
                 "&date=" + URLEncoder.encode(cert.getIssueDate().toString(), StandardCharsets.UTF_8);
 
 

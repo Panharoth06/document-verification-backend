@@ -2,6 +2,7 @@ package com.raidenz.doucmentverification;
 
 import com.raidenz.doucmentverification.dto.CertificateCreateRequest;
 import com.raidenz.doucmentverification.dto.CertificateResponse;
+import com.raidenz.doucmentverification.dto.CertificateVerifyResponse;
 import com.raidenz.doucmentverification.service.CertificateService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -49,7 +51,7 @@ public class CertificateController {
     }
 
     @PostMapping("/verify/upload")
-    public boolean verifyByUpload(@RequestParam("file") MultipartFile file) {
+    public CertificateVerifyResponse verifyByUpload(@RequestParam("file") MultipartFile file) {
         return certificateService.verifyByUploadedFile(file);
     }
 
