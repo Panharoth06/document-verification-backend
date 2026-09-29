@@ -1,38 +1,60 @@
 services:
   backend:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: certificate-backend
     ports:
-      - "8080:8080"                  # API available on http://localhost:8080
+      - "${PORT:-8080}:8080"
     environment:
-      - FRONTEND_BASE_URL=http://localhost:3000
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/document_verification_db
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SERVER_PORT=8080
+      - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-http://localhost:3000}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB:-document_verification_db}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-postgres}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
       - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
+      - JAVA_OPTS=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
     volumes:
       - ./certificates:/app/certificates
+    # Chromium uses shared memory (/dev/shm); default 64MB is prone to crashes during PDF rendering
+    shm_size: '1gb'
+    # Resolves host machine for frontend URLs (e.g. http://host.docker.internal:3000)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       db:
-        condition: service_healthy           # waits until postgres is really ready
+        condition: service_healthy
     restart: unless-stopped
+    networks:
+      - app-network
 
   db:
-    image: postgres:16
+    image: postgres:16-alpine
     container_name: certificate-db
     environment:
-      POSTGRES_DB: document_verification_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-document_verification_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-document_verification_db}"]
       interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 10s
     restart: unless-stopped
+    networks:
+      - app-network
 
 volumes:
   db-data:
+    name: certificate_db_data
+
+networks:
+  app-network:
+    name: certificate_app_network
+    driver: bridge

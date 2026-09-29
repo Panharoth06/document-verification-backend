@@ -1,7 +1,35 @@
+# Build and dependency artifacts
 build/
 .gradle/
-node_modules/
-.git
-.idea
-.vscode
-certificates
+out/
+target/
+*.class
+*.jar
+*.war
+
+# IDE & Editor files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Version control
+.git/
+.gitignore
+.gitattributes
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Local storage and certificates
+certificates/
+*.pdf
+
+# Documentation & Docker files
+README.md
+docker-compose*.yml
+Dockerfile*
+LICENSE

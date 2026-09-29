@@ -1,4 +1,4 @@
-# 📜 Document Verification Backend
+# 📜 Certificate Verification Backend
 
 [![Java](https://img.shields.io/badge/Java-21%20LTS-orange.svg?logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/21/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x%20%2F%204.x-brightgreen.svg?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)

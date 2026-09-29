@@ -47,3 +47,17 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+// Disable plain jar creation so only the executable bootJar is produced
+tasks.named('jar') {
+    enabled = false
+}
+
+// Playwright CLI task to pre-install Chromium browser binaries during Docker build
+tasks.register('playwrightInstall', JavaExec) {
+    group = 'verification'
+    description = 'Install Playwright Chromium browser binaries'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.microsoft.playwright.CLI'
+    args = ['install', 'chromium']
+}
